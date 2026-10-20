@@ -16,7 +16,7 @@ def save_metadata(map_chunks: List, chunks, path: str):
         map_chunks.append(metadata)
 
 def chunker():
-    p = Path("../vllm-0.10.1")
+    p = Path("vllm-0.10.1")
     map_chunks: list[dict] = []
     python_splitter = RecursiveCharacterTextSplitter.from_language(language=Language.PYTHON, add_start_index=True, chunk_size=200)
     makrdown_splitter = RecursiveCharacterTextSplitter(chunk_size=200, add_start_index=True)
