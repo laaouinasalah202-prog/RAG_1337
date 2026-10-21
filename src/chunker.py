@@ -20,8 +20,8 @@ def save_metadata(map_chunks: List, chunks, path: str):
 def chunker(chunk_size, overlap):
     p = Path("vllm-0.10.1")
     map_chunks: list[dict] = []
-    python_splitter = RecursiveCharacterTextSplitter.from_language(language=Language.PYTHON, add_start_index=True, chunk_size=300, chunk_overlap=overlap)
-    makrdown_splitter = RecursiveCharacterTextSplitter(chunk_size=200, add_start_index=True, chunk_overlap=3)
+    python_splitter = RecursiveCharacterTextSplitter.from_language(language=Language.PYTHON, add_start_index=True, chunk_size=5000, chunk_overlap=overlap)
+    makrdown_splitter = RecursiveCharacterTextSplitter(chunk_size=5000, add_start_index=True, chunk_overlap=overlap)
     
     for pth in p.rglob("*"):
         
