@@ -36,15 +36,15 @@ class Semantic_search:
         all_chunkstr = self.__strAll_docs()
         chunks_embeddings = []
         print("chunking with tqdm")
-        for chunk in all_chunkstr:
-            chunks_embeddings.append(self.model.encode(chunk))
+        # for chunk in all_chunkstr:
+        chunks_embeddings.append(self.model.encode([all_chunkstr]))
 
         self.chunk_embedding = chunks_embeddings
         with open(self.path_embeddings, "wb") as f:
             pickle.dump(self.chunk_embedding, f)
 
     def cosine_similarity(self, vec1, vec2):
-        return np.dot(vec1, vec2) / np.linalg.norm(vec1) * np.linalg.norm(vec2)
+        return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
     def load_or_create_embeddings(self):
         if os.path.exists(self.path_embeddings):
