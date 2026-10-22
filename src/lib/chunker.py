@@ -4,49 +4,61 @@ from typing import Dict, List
 from pathlib import Path
 import os
 from uuid import uuid1
+import tqdm
 
-def save_metadata(map_chunks: List, chunks, path: str):
-    for chunk in chunks:
-        metadata = {}
-        metadata.update(
-            {
-                "id": str(uuid1()),
-                "path": str(path), "first_character_index": chunk.metadata["start_index"],
-                "last_character_index": chunk.metadata["start_index"] + len(chunk.page_content),
-            }
+class Chunker:
+    def __init__(self, max_chunk_size):
+        self.max_chunk_size = max_chunk_size
+        self.overlap = self.max_chunk_size // 15
+        self.map_chunks: list[dict] = []
+
+    def chunker(self):
+        p = Path("vllm-0.10.1")
+        python_splitter = RecursiveCharacterTextSplitter.from_language(
+            language=Language.PYTHON,
+            add_start_index=True,
+            chunk_size=self.max_chunk_size,
+            chunk_overlap=self.overlap
             )
-        map_chunks.append(metadata)
-
-def chunker(chunk_size, overlap):
-    p = Path("vllm-0.10.1")
-    map_chunks: list[dict] = []
-    python_splitter = RecursiveCharacterTextSplitter.from_language(language=Language.PYTHON, add_start_index=True, chunk_size=5000, chunk_overlap=overlap)
-    makrdown_splitter = RecursiveCharacterTextSplitter(chunk_size=5000, add_start_index=True, chunk_overlap=overlap)
-    
-    for pth in p.rglob("*"):
-        
-        if pth.is_file() and pth.suffix.lower() == ".py":
-            docs = pth.read_text()
-            chunks = python_splitter.create_documents([docs])
-            save_metadata(map_chunks, chunks, pth)
-
-        elif pth.is_file():
-            try:
+        makrdown_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=self.max_chunk_size,
+            add_start_index=True,
+            chunk_overlap=self.overlap
+            )
+        files = list(p.rglob("*"))
+        for pth in tqdm.tqdm(files):
+            if pth.is_file() and pth.suffix.lower() == ".py":
                 docs = pth.read_text()
-                chunks = makrdown_splitter.create_documents([docs])
-                save_metadata(map_chunks, chunks, pth)
-            except UnicodeDecodeError as e:
-                print(f"{e}: skiping no utf-8 files")
+                chunks = python_splitter.create_documents([docs])
+                self.save_metadata(chunks, pth)
 
-        else:
-            continue
-    index_path = "data/processed/index.json"
-     
-    if os.path.exists(index_path) is False:
-        os.makedirs("data/processed/")
+            elif pth.is_file():
+                try:
+                    docs = pth.read_text()
+                    chunks = makrdown_splitter.create_documents([docs])
+                    self.save_metadata(chunks, pth)
+                except UnicodeDecodeError as e:
+                    # print(f"{e}: skiping no utf-8 files")
+                    pass
 
-    with open(index_path, "w") as f:
-        json.dump(map_chunks, f, indent=4)
+            else:
+                continue
+        index_path = "data/processed/index.json"
+        
+        if os.path.exists("data/processed/") is False:
+            os.makedirs("data/processed/")
 
-    
-chunker(1000, 300)
+        with open(index_path, "w") as f:
+            json.dump(self.map_chunks, f, indent=4)
+        return self.map_chunks
+    def save_metadata(self, chunks, path: str):
+        for chunk in chunks:
+            metadata = {}
+            metadata.update(
+                {
+                    "id": str(uuid1()),
+                    "path": str(path), "first_character_index": chunk.metadata["start_index"],
+                    "last_character_index": chunk.metadata["start_index"] + len(chunk.page_content),
+                }
+                )
+            self.map_chunks.append(metadata)

@@ -7,7 +7,7 @@ def term_toknizer(term: str) -> list:
     stemmer = PorterStemmer()
     term_toknizer = []
 
-    with open("src/stop_word.txt", "r") as f:
+    with open("src/lib/stop_word.txt", "r") as f:
             stop_word = f.read()
             stop_word = stop_word.split()
 

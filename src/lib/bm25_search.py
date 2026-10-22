@@ -1,4 +1,4 @@
-from tokenizer import tokenizer, term_toknizer
+from lib.tokenizer import tokenizer, term_toknizer
 import os
 import pickle
 import json
@@ -22,7 +22,7 @@ class KeyWordSearch:
 
     def _build_inverse_indx(self):
         print("build the inverse index...")
-        for chunk in tqdm.tqdm(self.doc_chunks):
+        for chunk in self.doc_chunks:
             chunk_str = self.__read_chunk(chunk)
             chunk_tokenized = tokenizer(chunk_str)
             for token in chunk_tokenized:
@@ -60,18 +60,16 @@ class KeyWordSearch:
         return all_docs_lenght
     
     def bm25_tf(self, token, chunk_id, chunk_len):
-        tf = 0
-        bm25_tf = 0
         avrg = self.all_doc_len/len(self.doc_chunks)
         b = 0.75
         k = 1.2 # saturation para around 1,2 
+        bm25tf = 0
         lenght_normalization = 1 - b + b * (chunk_len/avrg)
-
         if self.inverse_index.get(token) and self.inverse_index[token].get(chunk_id):
             tf = self.inverse_index[token][chunk_id]
-            bm25_tf += (tf * (k + 1)) / (tf + k * lenght_normalization)
+            bm25tf = (tf * (k + 1)) / (tf + k * lenght_normalization)
 
-        return bm25_tf
+        return bm25tf
 
 
     def bm25_idf(self, token):
@@ -83,7 +81,8 @@ class KeyWordSearch:
     def bm25(self, query, limit) -> List[Dict]:
         bm25_search: List[Dict] = []
         query_tokenized = tokenizer(query)
-        for i, chunk in tqdm.tqdm(enumerate(self.doc_chunks)):
+        self.load_or_creatIndex()
+        for i, chunk in enumerate(self.doc_chunks):
             score = 0
             chunk_len = chunk["last_character_index"] - chunk["first_character_index"]
             chunk_id = chunk["id"]
@@ -94,11 +93,11 @@ class KeyWordSearch:
                 "bm25_score": score,
             }
             bm25_search.append(chunk_bm25)
-        
+
         bm25_limit = sorted(bm25_search, key=lambda item: item["bm25_score"], reverse=True)
-        return bm25_limit[:limit]
+        map_bm25 = {
+                    self.doc_chunks[r["chunk_indx"]]["id"]: {"chunk_indx": r["chunk_indx"], "bm25_score": r["bm25_score"]}
+                    for r in bm25_limit[:limit]
+            }
 
-
-b = KeyWordSearch()
-b.load_or_creatIndex()
-print(b.bm25("def gpu cpu 3dfaf sample so we can use this ", 5))
+        return map_bm25

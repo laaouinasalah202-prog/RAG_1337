@@ -16,7 +16,7 @@ class Semantic_search:
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.path_embeddings = "data/processed/embeddings.pkl"
         self.chunk_embedding = []
-
+        
     def __read_chunk(self, chunk):
         with open(chunk["path"], "r", encoding="utf-8") as f:
             chunk_string = f.read()[chunk["first_character_index"]:chunk["last_character_index"]]
@@ -28,7 +28,7 @@ class Semantic_search:
 
     def __strAll_docs(self) -> str:
         all_chunks = []
-        for chunk in tqdm.tqdm(self.chunks_index):
+        for chunk in self.chunks_index:
             all_chunks.append(self.__read_chunk(chunk))
         return all_chunks
 
@@ -36,7 +36,7 @@ class Semantic_search:
         all_chunkstr = self.__strAll_docs()
         chunks_embeddings = []
         print("chunking with tqdm")
-        for chunk in tqdm.tqdm(all_chunkstr):
+        for chunk in all_chunkstr:
             chunks_embeddings.append(self.model.encode(chunk))
 
         self.chunk_embedding = chunks_embeddings
@@ -67,5 +67,11 @@ class Semantic_search:
                 }
             )
         map_chunks_score = sorted(map_chunks_score, key=lambda item: item["cosine_similarity"], reverse=True)
-        return map_chunks_score[:limit]
+        with open("data/processed/index.json", "r") as f:
+            doc_chunks = json.load(f)
+        semantic_map = {
+                doc_chunks[r["chunk_indx"]]["id"]: {"chunk_indx": r["chunk_indx"], "cosine_similarity": r["cosine_similarity"]}
+            for r in map_chunks_score[:limit]
+        }
+        return semantic_map
 
