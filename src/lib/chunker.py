@@ -75,12 +75,16 @@ class Chunker:
 
         files_to_remove = modified_files + deleted_files
         if len(files_to_remove) == 0:
+            print(f"Indexes file already exist and no file is modified")
             return
-        # print(files_to_remove)
+        
         self.map_chunks = [chunk for chunk in self.map_chunks if chunk["path"] not in files_to_remove]
         self.map_file_stat = [stat for stat in self.map_file_stat if stat["file_path"] not in files_to_remove]
-        print("here we go deleting a file")
+
+        if len(deleted_files) > 0:
+            print(f"Deleted files: {deleted_files}")
         if len(modified_files) > 0:
+            print(f"Reindixing modified files:\n{modified_files}")
             self.reindex_modified(modified_files)
             
 
@@ -94,10 +98,10 @@ class Chunker:
             return True
 
 
-    # i need to add the feature of reindexing if the file date time change
     def chunker(self):
         if self.__index_exist():
             return self.map_chunks
+        print("Chunking all the data in vllm-0.10.1")
         p = self.root_path
         python_splitter = RecursiveCharacterTextSplitter.from_language(
             language=Language.PYTHON,
@@ -135,10 +139,11 @@ class Chunker:
                 continue
 
         index_path = "data/processed/index.json"
+        map_file_stat = "data/processed/file_stat.json"
         if os.path.exists("data/processed/") is False:
             os.makedirs("data/processed/")
-        print(self.map_file_stat)
-        with open("data/processed/file_stat.json", "w") as f:
+    
+        with open(map_file_stat, "w") as f:
             json.dump(self.map_file_stat, f, indent=4)
 
         with open(index_path, "w") as f:
