@@ -60,7 +60,7 @@ class Cli:
             search_result = self.search(query, k, False)
             map_pydantic_unansered = {"question_id": id, "question": query}
             minimal_search_result = {"question_id": id, "question": query, "retrieved_sources": search_result}
-            list_Minimal_search_result.append(models.MinimalSearchResults(**minimal_search_result))
+            # list_Minimal_search_result.append(models.MinimalSearchResults(minimal_search_result))
 
             list_UnansweredQuestion.append(models.UnansweredQuestion(**map_pydantic_unansered))
             retrieves.append(
@@ -74,8 +74,8 @@ class Cli:
                 }
             )
         ## validate rag questions all pydantic
-        models.RagDataset(rag_questions=list_UnansweredQuestion)
-        models.StudentSearchResults(search_results=list_Minimal_search_result, k=k)
+        # models.RagDataset(list_UnansweredQuestion)
+        # models.StudentSearchResults(list_Minimal_search_result, k)
 
         if os.path.exists(save_directory) is False:
             os.makedirs(save_directory)
@@ -190,7 +190,7 @@ class Cli:
                 "answer": response
                 }
             # Minimal_search_result = model.MinimalSearchResults(**minimal_source_result)
-            list_minimal_answer.append(models.MinimalAnswer(**minimal_source_result))
+            list_minimal_answer.append(model.MinimalAnswer(**minimal_source_result))
             answear_data.append({
                             
                     "question_id": data["question_id"],
@@ -200,7 +200,7 @@ class Cli:
             })
             break
         #pydantic validation
-        models.StudentSearchResultsAndAnswer(search_results=list_minimal_answer, k=k)
+        models.StudentSearchResultsAndAnswer(list_minimal_answer, k)
 
         dump_result = {"search_results": answear_data, "k": k}
         print(dump_result)

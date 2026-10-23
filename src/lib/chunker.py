@@ -101,6 +101,7 @@ class Chunker:
     def chunker(self):
         if self.__index_exist():
             return self.map_chunks
+    
         print("Chunking all the data in vllm-0.10.1")
         p = self.root_path
         python_splitter = RecursiveCharacterTextSplitter.from_language(

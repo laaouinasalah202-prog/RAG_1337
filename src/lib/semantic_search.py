@@ -9,9 +9,9 @@ import pickle
 
 class Semantic_search:
     def __init__(self, model_name):
-        
-        with open("data/processed/index.json", "r") as f:
-            self.chunks_index = json.load(f)
+        if os.path.exists("data/processed/index.json"):
+            with open("data/processed/index.json", "r") as f:
+                self.chunks_index = json.load(f)
         self.model_name = model_name
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.path_embeddings = "data/processed/embeddings.pkl"
