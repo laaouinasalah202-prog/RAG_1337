@@ -13,7 +13,7 @@ class Chunker:
         self.map_chunks: list[dict] = []
 
     def chunker(self):
-        p = Path("vllm-0.10.1")
+        p = Path("data/raw/vllm-0.10.1")
         python_splitter = RecursiveCharacterTextSplitter.from_language(
             language=Language.PYTHON,
             add_start_index=True,
@@ -38,13 +38,11 @@ class Chunker:
                     chunks = makrdown_splitter.create_documents([docs])
                     self.save_metadata(chunks, pth)
                 except UnicodeDecodeError as e:
-                    # print(f"{e}: skiping no utf-8 files")
                     pass
 
             else:
                 continue
         index_path = "data/processed/index.json"
-        
         if os.path.exists("data/processed/") is False:
             os.makedirs("data/processed/")
 

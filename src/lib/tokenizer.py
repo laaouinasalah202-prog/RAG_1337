@@ -25,8 +25,3 @@ def tokenizer(string: str) -> list:
         tokens += term_toknizer(word)
     return tokens
 
-
-s=''''''
-
-
-print(tokenizer(s))

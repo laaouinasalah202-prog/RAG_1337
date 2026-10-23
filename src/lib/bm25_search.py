@@ -65,10 +65,10 @@ class KeyWordSearch:
         k = 1.2 # saturation para around 1,2 
         bm25tf = 0
         lenght_normalization = 1 - b + b * (chunk_len/avrg)
+        print(len(self.inverse_index))
         if self.inverse_index.get(token) and self.inverse_index[token].get(chunk_id):
             tf = self.inverse_index[token][chunk_id]
             bm25tf = (tf * (k + 1)) / (tf + k * lenght_normalization)
-
         return bm25tf
 
 
@@ -82,12 +82,14 @@ class KeyWordSearch:
         bm25_search: List[Dict] = []
         query_tokenized = tokenizer(query)
         self.load_or_creatIndex()
+
         for i, chunk in enumerate(self.doc_chunks):
             score = 0
             chunk_len = chunk["last_character_index"] - chunk["first_character_index"]
             chunk_id = chunk["id"]
             for token in  query_tokenized:
                 score += self.bm25_idf(token) * self.bm25_tf(token, chunk_id, chunk_len)
+            
             chunk_bm25 = {
                 "chunk_indx": i,
                 "bm25_score": score,

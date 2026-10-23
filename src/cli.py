@@ -14,7 +14,7 @@ class Cli:
         chunks = chunker.chunker()
         print(f"Ingestion complete! Indexed {len(chunks)} chunks under data/processed")
 
-    def search(self, query, k, print=True):
+    def search(self, query, k, printt=True):
         if os.path.exists("data/processed/index.json") is False:
             print("- Error: no chunks found in disk\n" \
             "- Run for example: uv run python3 -m src index --max_chunk_size 2000")
@@ -24,7 +24,7 @@ class Cli:
         result = rrf_search.rrf_search()
         with open("data/processed/index.json") as f:
             chunks = json.load(f)
-        if print:
+        if printt:
             for i in result:
                 chunk_path = chunks[i["chunk_indx"]]["path"]
                 chunk_start_indx = chunks[i["chunk_indx"]]["first_character_index"]
@@ -38,7 +38,7 @@ class Cli:
                 "last_character_index": chunks[i["chunk_indx"]]["last_character_index"]
                 } for i in result
             ]
-        
+
         return format_result
 
     def search_dataset(self, dataset_path, save_directory, k=10):
@@ -59,7 +59,6 @@ class Cli:
                         ]
                 }
             )
-
         if os.path.exists(save_directory) is False:
             os.makedirs(save_directory)
         dump_result = {"search_results": retrieves, "k": k}
@@ -177,14 +176,36 @@ class Cli:
         with open(os.path.join(save_directory, "answeared_dataset.json"), "w") as f:
             json.dump(dump_result, f, indent=4)
 
+    def calculate_recallk(self, k, golden_data, my_result):
+        count = 0
+        for i, gol in enumerate(golden_data):
+            my_res_retrives = [i["file_path"] for i in my_result[i]["retrieved_sources"][:k]]
+            # print(gol["sources"][0]["file_path"])
+            # print(my_res_retrives)
+            if gol["sources"][0]["file_path"] in my_res_retrives:
+                count += 1
+        return count / len(my_result)
+
     def evaluate(self, student_search_results_path, dataset_path):
         if not os.path.exists(student_search_results_path):
             raise FileNotFoundError(f"{student_search_results_path} dose not exist")
         with open(student_search_results_path, "r") as f:
-            my_result = json.load(f)
+            my_result = json.load(f)["search_results"]
         with open(dataset_path, "r") as f:
-            golden_data = json.load(f)
-        from pathlib import Path
+            golden_data = json.load(f)["rag_questions"]
+
+        print("I home it's a good recall")
+        print(f"Total of questions: {len(my_result)}")
+        print(f"Total number of questions with student sources: {len(golden_data)}")
+        list_k = [1, 3, 5, 10]
+        print("Evaluation result")
+        print("=============================")
+        print(f"Questions evaluated: {len(my_result)}")
+        for k in list_k:
+            recall = self.calculate_recallk(k, golden_data, my_result)
+            print(f"Recall@{k}: {recall} ({recall * 100}%)")
+        
+        # from pathlib import Path
         # f = Path("dict")
         # f2 = f / "text.txt"
         # if not f2.exists():
