@@ -1,11 +1,10 @@
-from lib.semantic_search import Semantic_search
 from lib.bm25_search import KeyWordSearch
 from typing import List
 
 
 class Rrf_Search:
-    def __init__(self, query, limit):
-        self.semantic_search = Semantic_search("all-MiniLM-L6-v2")
+    def __init__(self, query, limit, embedding_model):
+        self.semantic_search = embedding_model
         self.bm25_result = KeyWordSearch()
         self.query = query
         self.limit = limit

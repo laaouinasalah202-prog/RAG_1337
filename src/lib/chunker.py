@@ -5,14 +5,26 @@ from pathlib import Path
 import os
 from uuid import uuid1
 import tqdm
+from datetime import datetime
 
 class Chunker:
     def __init__(self, max_chunk_size):
         self.max_chunk_size = max_chunk_size
         self.overlap = self.max_chunk_size // 15
         self.map_chunks: list[dict] = []
+        self.map_file_stat = []
 
+
+    def __index_exist(self):
+        if os.path.exists("data/processed/index.json"):
+            with open("data/processed/index.json", "r") as f:
+                self.map_chunks = json.load(f)
+            return True
+    
+    # i need to add the feature of reindexing if the file date time change
     def chunker(self):
+        if self.__index_exist():
+            return self.map_chunks
         p = Path("data/raw/vllm-0.10.1")
         python_splitter = RecursiveCharacterTextSplitter.from_language(
             language=Language.PYTHON,
@@ -27,6 +39,13 @@ class Chunker:
             )
         files = list(p.rglob("*"))
         for pth in tqdm.tqdm(files):
+            time =  pth.stat().st_mtime
+            self.map_file_stat.append(
+                {
+                    "index_time": time,
+                    "readable_time": datetime.fromtimestamp(time)
+                }
+            )
             if pth.is_file() and pth.suffix.lower() == ".py":
                 docs = pth.read_text()
                 chunks = python_splitter.create_documents([docs])
@@ -49,6 +68,7 @@ class Chunker:
         with open(index_path, "w") as f:
             json.dump(self.map_chunks, f, indent=4)
         return self.map_chunks
+    
     def save_metadata(self, chunks, path: str):
         for chunk in chunks:
             metadata = {}

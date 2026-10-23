@@ -6,9 +6,11 @@ import json
 from lib import models
 import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
-
+from lib.semantic_search import Semantic_search
 
 class Cli:
+    def __init__(self):
+        self.embedding_model = Semantic_search("all-MiniLM-L6-v2") 
     def index(self, max_chunk_size):
         chunker = Chunker(max_chunk_size)
         chunks = chunker.chunker()
@@ -20,7 +22,7 @@ class Cli:
             "- Run for example: uv run python3 -m src index --max_chunk_size 2000")
             return
     
-        rrf_search = Rrf_Search(query, k)
+        rrf_search = Rrf_Search(query, k, self.embedding_model)
         result = rrf_search.rrf_search()
         with open("data/processed/index.json") as f:
             chunks = json.load(f)

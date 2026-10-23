@@ -65,7 +65,6 @@ class KeyWordSearch:
         k = 1.2 # saturation para around 1,2 
         bm25tf = 0
         lenght_normalization = 1 - b + b * (chunk_len/avrg)
-        print(len(self.inverse_index))
         if self.inverse_index.get(token) and self.inverse_index[token].get(chunk_id):
             tf = self.inverse_index[token][chunk_id]
             bm25tf = (tf * (k + 1)) / (tf + k * lenght_normalization)
