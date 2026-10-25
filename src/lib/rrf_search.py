@@ -8,11 +8,11 @@ class Rrf_Search:
         self.bm25_result = KeyWordSearch()
         self.query = query
         self.limit = limit
-        
+
     def __search(self):
         self.vector_search = self.semantic_search.semantic_search(self.query, self.limit)
         self.bm25 = self.bm25_result.bm25(self.query, self.limit)
-        
+
     def score_normalize(self, score, max, min) -> List:
         if max - min  == 0:
             return 0
@@ -41,8 +41,7 @@ class Rrf_Search:
             else:
                 semantic_score = 0
             bm25_score = chunk_metadat["bm25_score"]
-            # print(semantic_score)
-
+            
             new_score = alpha * bm25_score + (1 - alpha) * semantic_score
             weight_combo.append(
                 {
@@ -58,6 +57,7 @@ class Rrf_Search:
     def rrf_search(self, k: int = 60) -> List:
         self.__search()
         self.score_normalization()
+        
         scores = self.weight_normalization(0.7)
 
         rrf_map: list[dict] = []
@@ -70,6 +70,6 @@ class Rrf_Search:
                     "rrf": rrf
                 }
             )
-        
+
         rrf_map = sorted(rrf_map, key=lambda item: item["rrf"], reverse=True)
         return rrf_map

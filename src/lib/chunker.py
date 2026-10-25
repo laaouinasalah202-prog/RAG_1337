@@ -43,7 +43,7 @@ class Chunker:
                 chunks = python_splitter.create_documents([docs])
                 self.save_metadata(chunks, pth)
 
-            elif pth.is_file():
+            elif pth.is_file() and (pth.suffix.lower() ==".md" or pth.suffix.lower() == ".txt"):
                 try:
                     docs = pth.read_text()
                     chunks = makrdown_splitter.create_documents([docs])
@@ -108,12 +108,12 @@ class Chunker:
             language=Language.PYTHON,
             add_start_index=True,
             chunk_size=self.max_chunk_size,
-            chunk_overlap=self.overlap
+            chunk_overlap=200
             )
         makrdown_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.max_chunk_size,
             add_start_index=True,
-            chunk_overlap=self.overlap
+            chunk_overlap=200
             )
         files = list(p.rglob("*"))
         for pth in tqdm.tqdm(files):
@@ -129,13 +129,13 @@ class Chunker:
                 chunks = python_splitter.create_documents([docs])
                 self.save_metadata(chunks, pth)
 
-            elif pth.is_file():
-                try:
-                    docs = pth.read_text()
-                    chunks = makrdown_splitter.create_documents([docs])
-                    self.save_metadata(chunks, pth)
-                except UnicodeDecodeError as e:
-                    pass
+            elif pth.is_file() and (pth.suffix.lower() == ".md" or pth.suffix.lower() == ".txt"):
+                # try:
+                docs = pth.read_text(errors="replace")
+                chunks = makrdown_splitter.create_documents([docs])
+                self.save_metadata(chunks, pth)
+                # except UnicodeDecodeError as e:
+                #     pass
             else:
                 continue
 

@@ -16,7 +16,7 @@ class KeyWordSearch:
         self.all_doc_len = self._calculate_doc_lenght()  # this should be replaced with chunk tokenized
 
     def __read_chunk(self, chunk):
-        with open(chunk["path"], "r", encoding="utf-8") as f:
+        with open(chunk["path"], "r", encoding="utf-8", errors="replace") as f:
             chunk_string = f.read()[chunk["first_character_index"]:chunk["last_character_index"]]
         return chunk_string
 

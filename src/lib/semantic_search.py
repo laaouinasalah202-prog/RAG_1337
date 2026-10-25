@@ -16,9 +16,9 @@ class Semantic_search:
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.path_embeddings = "data/processed/embeddings.pkl"
         self.chunk_embedding = []
-        
+
     def __read_chunk(self, chunk):
-        with open(chunk["path"], "r", encoding="utf-8") as f:
+        with open(chunk["path"], "r", encoding="utf-8", errors="replace") as f:
             chunk_string = f.read()[chunk["first_character_index"]:chunk["last_character_index"]]
         return chunk_string
 
@@ -52,7 +52,7 @@ class Semantic_search:
         else:
             self.embed_chunks()
 
-    
+
     def semantic_search(self, query, limit):
         query_embd = self.__embed_text(query)
         self.load_or_create_embeddings()

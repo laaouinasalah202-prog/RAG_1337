@@ -60,7 +60,7 @@ class Cli:
             search_result = self.search(query, k, False)
             map_pydantic_unansered = {"question_id": id, "question": query}
             minimal_search_result = {"question_id": id, "question": query, "retrieved_sources": search_result}
-            # list_Minimal_search_result.append(models.MinimalSearchResults(minimal_search_result))
+            list_Minimal_search_result.append(models.MinimalSearchResults(**minimal_search_result))
 
             list_UnansweredQuestion.append(models.UnansweredQuestion(**map_pydantic_unansered))
             retrieves.append(
@@ -74,8 +74,8 @@ class Cli:
                 }
             )
         ## validate rag questions all pydantic
-        # models.RagDataset(list_UnansweredQuestion)
-        # models.StudentSearchResults(list_Minimal_search_result, k)
+        models.RagDataset(rag_questions=list_UnansweredQuestion)
+        models.StudentSearchResults(search_results=list_Minimal_search_result, k=k)
 
         if os.path.exists(save_directory) is False:
             os.makedirs(save_directory)
@@ -99,7 +99,6 @@ class Cli:
             device_map="auto"
         )
         search_result = self.search(query, k, False)
-        # srouces is a list of Minimal sources so you need to fix it
         map_pydantic.update({"question": query, "sources": search_result})
         all_result_str = ''.join([self.__read_chunk(chunk) for chunk in search_result])
         SYSTEM_PROMPT = f"""You are a helpful technical assistant. You will receive a question and several retrieved context passages (code, documentation, or notes).
@@ -137,7 +136,7 @@ class Cli:
         models.AnsweredQuestion(**map_pydantic)
         print(response)
 
-    
+
     def answer_dataset(self, student_search_results_path, save_directory):
         import torch
         model_name = "Qwen/Qwen3-0.6B"
@@ -189,8 +188,8 @@ class Cli:
                 "retrieved_sources": data["retrieved_sources"],
                 "answer": response
                 }
-            # Minimal_search_result = model.MinimalSearchResults(**minimal_source_result)
-            list_minimal_answer.append(model.MinimalAnswer(**minimal_source_result))
+            Minimal_search_result = models.MinimalSearchResults(**minimal_source_result)
+            list_minimal_answer.append(models.MinimalAnswer(**minimal_source_result))
             answear_data.append({
                             
                     "question_id": data["question_id"],
@@ -200,7 +199,7 @@ class Cli:
             })
             break
         #pydantic validation
-        models.StudentSearchResultsAndAnswer(list_minimal_answer, k)
+        models.StudentSearchResultsAndAnswer(search_results=list_minimal_answer,k=k)
 
         dump_result = {"search_results": answear_data, "k": k}
         print(dump_result)

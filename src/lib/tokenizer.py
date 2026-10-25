@@ -2,7 +2,7 @@ from nltk.stem import PorterStemmer
 import re
 
 def term_toknizer(term: str) -> list:
-    pattern = r"[A-Z]+|[a-z]+|/d+"
+    pattern = r"[A-Z]+|[A-Z](?:[a-z]+)|[a-z]+\d*|\d+"
     matched = re.findall(pattern, term)
     stemmer = PorterStemmer()
     term_toknizer = []
@@ -24,4 +24,3 @@ def tokenizer(string: str) -> list:
     for word in list_string:
         tokens += term_toknizer(word)
     return tokens
-
