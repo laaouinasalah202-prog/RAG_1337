@@ -93,9 +93,11 @@ class Chunker:
             with open("data/processed/index.json", "r") as f:
                 self.map_chunks = json.load(f)
             with open("data/processed/file_stat.json", "r") as f:
-                self.map_file_stat = json.load(f)
+                self.map_file_stat = json.load(f) {path: str, teim: timestamp}
             self.check_modified_files()
             return True
+        else:
+            return False
 
 
     def chunker(self):
