@@ -7,24 +7,26 @@ from src.lib import models
 import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from src.lib.semantic_search import Semantic_search
+import torch
 
 class Cli:
-    def __init__(self):
-        self.embedding_model = Semantic_search("all-MiniLM-L6-v2") 
-    def index(self, max_chunk_size):
+    def __init__(self) -> None:
+        self.embedding_model: Semantic_search = Semantic_search("all-MiniLM-L6-v2")
+        self.index_path = "data/processed/index.json"
+    def index(self, max_chunk_size: int) -> None:
         chunker = Chunker(max_chunk_size)
         chunks = chunker.chunker()
         print(f"Ingestion complete! Indexed {len(chunks)} chunks under data/processed")
 
-    def search(self, query, k, printt=True):
-        if os.path.exists("data/processed/index.json") is False:
+    def search(self, query:str, k: int, printt: bool =True):
+        if os.path.exists(self.index_path) is False:
             print("- Error: no chunks found in disk\n" \
             "- Run for example: uv run python3 -m src index --max_chunk_size 2000")
             return
     
         rrf_search = Rrf_Search(query, k, self.embedding_model)
         result = rrf_search.rrf_search()
-        with open("data/processed/index.json") as f:
+        with open(self.index_path) as f:
             chunks = json.load(f)
 
         format_result = [
@@ -33,12 +35,11 @@ class Cli:
                 "first_character_index": chunks[i["chunk_indx"]]["first_character_index"],
                 "last_character_index": chunks[i["chunk_indx"]]["last_character_index"]
                 } for i in result
-            ]
-        #pydantic validation
-        minimal_sources_list = []
+        ]
+
+        # validate the data using pydantic model MinimalSource
         for r in format_result:
             models.MinimalSource(**r)
-        #printing result
         if printt:
             for i in result:
                 chunk_path = chunks[i["chunk_indx"]]["path"]
@@ -48,20 +49,22 @@ class Cli:
         
         return format_result
 
-    def search_dataset(self, dataset_path, save_directory, k=10):
+    def search_dataset(self, dataset_path: str, save_directory: str, k: int=10) -> None:
         with open(dataset_path, "r") as f:
             data_set = json.load(f)["rag_questions"]
+
         retrieves: list[dict] = []
         list_UnansweredQuestion = []
         list_Minimal_search_result = []
+
         for data in data_set:
             query = data["question"]
             id = data["question_id"]
             search_result = self.search(query, k, False)
             map_pydantic_unansered = {"question_id": id, "question": query}
             minimal_search_result = {"question_id": id, "question": query, "retrieved_sources": search_result}
-            list_Minimal_search_result.append(models.MinimalSearchResults(**minimal_search_result))
 
+            list_Minimal_search_result.append(models.MinimalSearchResults(**minimal_search_result))
             list_UnansweredQuestion.append(models.UnansweredQuestion(**map_pydantic_unansered))
             retrieves.append(
                 {
@@ -73,12 +76,14 @@ class Cli:
                         ]
                 }
             )
-        ## validate rag questions all pydantic
+
+        # validate the output using list of MinimalSearchResults and list of UnansweredQuestion
         models.RagDataset(rag_questions=list_UnansweredQuestion)
         models.StudentSearchResults(search_results=list_Minimal_search_result, k=k)
 
         if os.path.exists(save_directory) is False:
             os.makedirs(save_directory)
+        
         dump_result = {"search_results": retrieves, "k": k}
         with open(os.path.join(save_directory, "out.json"), "w") as f:
             json.dump(dump_result, f, indent=4)
@@ -89,7 +94,7 @@ class Cli:
         return chunk_string
 
 
-    def answear(self, query, k):
+    def answear(self, query: str, k: int) -> str:
         model_name = "Qwen/Qwen3-0.6B"
         map_pydantic = {}
         tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -126,19 +131,17 @@ class Cli:
             messages,
             tokenize=False,
             add_generation_prompt=True,
-            enable_thinking=False # Switches between thinking and non-thinking modes. Default is True.
+            enable_thinking=False
         )
         inputs = tokenizer(text, return_tensors="pt")
         response_ids = model.generate(**inputs, max_new_tokens=32768)[0][len(inputs.input_ids[0]):].tolist()
         response = tokenizer.decode(response_ids, skip_special_tokens=True)
-        # pydantic validation
         map_pydantic.update({"answer": response})
         models.AnsweredQuestion(**map_pydantic)
         print(response)
         return response
 
     def answer_dataset(self, student_search_results_path, save_directory):
-        import torch
         model_name = "Qwen/Qwen3-0.6B"
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         model = AutoModelForCausalLM.from_pretrained(
@@ -176,12 +179,12 @@ class Cli:
                 messages,
                 tokenize=False,
                 add_generation_prompt=True,
-                enable_thinking=False # Switches between thinking and non-thinking modes. Default is True.
-            )
+                enable_thinking=False
+            ) 
             inputs = tokenizer(text, return_tensors="pt")
             response_ids = model.generate(**inputs, max_new_tokens=32768)[0][len(inputs.input_ids[0]):].tolist()
             response = tokenizer.decode(response_ids, skip_special_tokens=True)
-            # pydantic validation 
+            
             minimal_source_result = {
                 "question_id": data["question_id"],
                 "question": data["question"],
@@ -212,8 +215,6 @@ class Cli:
         count = 0
         for i, gol in enumerate(golden_data):
             my_res_retrives = [i["file_path"] for i in my_result[i]["retrieved_sources"][:k]]
-            # print(gol["sources"][0]["file_path"])
-            # print(my_res_retrives)
             if gol["sources"][0]["file_path"] in my_res_retrives:
                 count += 1
         return count / len(my_result)
@@ -236,12 +237,6 @@ class Cli:
         for k in list_k:
             recall = self.calculate_recallk(k, golden_data, my_result)
             print(f"Recall@{k}: {recall} ({recall * 100}%)")
-        
-        # from pathlib import Path
-        # f = Path("dict")
-        # f2 = f / "text.txt"
-        # if not f2.exists():
-        #     f2.parent.mkdir()
 
 if __name__ == "__main__":
     fire.Fire(Cli)
