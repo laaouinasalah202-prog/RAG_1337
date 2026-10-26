@@ -1,15 +1,20 @@
 from nltk.stem import PorterStemmer
 import re
 
+
+with open("src/lib/stop_word.txt", "r") as f:
+        stop_word = f.read()
+        stop_word = stop_word.split()
+
 def term_toknizer(term: str) -> list:
-    pattern = r"[A-Z]+|[A-Z](?:[a-z]+)|[a-z]+\d*|\d+"
+    # pattern = r"[A-Z]+|[A-Z](?:[a-z]+)|[a-z]+\d*|\d+"
+    # pattern = r"[A-Z]+(?![a-z])|[A-Z][a-z]+(?:-\d+)?|[a-z]+|\d+"
+    pattern = r"(?u)\b\w\w+\b"
+
     matched = re.findall(pattern, term)
     stemmer = PorterStemmer()
     term_toknizer = []
 
-    with open("src/lib/stop_word.txt", "r") as f:
-            stop_word = f.read()
-            stop_word = stop_word.split()
 
     for m in matched:
         m = stemmer.stem(m)
@@ -20,7 +25,7 @@ def term_toknizer(term: str) -> list:
 def tokenizer(string: str) -> list:
     list_string = string.split()
     tokens = []
-    
+
     for word in list_string:
         tokens += term_toknizer(word)
     return tokens

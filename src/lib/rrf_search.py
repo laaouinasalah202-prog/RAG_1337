@@ -54,6 +54,7 @@ class Rrf_Search:
         weight_combo = sorted(weight_combo, key=lambda item: item["score"], reverse=True)
         return weight_combo
 
+
     def rrf_search(self, k: int = 60) -> List:
         self.__search()
         self.score_normalization()

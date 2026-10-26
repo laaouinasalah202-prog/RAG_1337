@@ -20,6 +20,7 @@ class Semantic_search:
     def __read_chunk(self, chunk):
         with open(chunk["path"], "r", encoding="utf-8", errors="replace") as f:
             chunk_string = f.read()[chunk["first_character_index"]:chunk["last_character_index"]]
+
         return chunk_string
 
     def __embed_text(self, text):

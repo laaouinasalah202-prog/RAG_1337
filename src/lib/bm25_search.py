@@ -58,7 +58,7 @@ class KeyWordSearch:
         for chunk in self.doc_chunks:
             all_docs_lenght += chunk["last_character_index"] - chunk["first_character_index"]
         return all_docs_lenght
-    
+
     def bm25_tf(self, token, chunk_id, chunk_len):
         avrg = self.all_doc_len/len(self.doc_chunks)
         b = 0.75
