@@ -1,4 +1,4 @@
-from lib.tokenizer import tokenizer, term_toknizer
+from src.lib.tokenizer import tokenizer, term_toknizer
 import os
 import pickle
 import json

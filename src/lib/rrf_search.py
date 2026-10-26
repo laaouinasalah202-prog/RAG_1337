@@ -1,4 +1,4 @@
-from lib.bm25_search import KeyWordSearch
+from src.lib.bm25_search import KeyWordSearch
 from typing import List
 
 

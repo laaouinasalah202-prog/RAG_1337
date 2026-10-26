@@ -1,12 +1,12 @@
 import fire
-from lib.chunker import Chunker
-from lib.rrf_search import Rrf_Search
+from src.lib.chunker import Chunker
+from src.lib.rrf_search import Rrf_Search
 import os
 import json
-from lib import models
+from src.lib import models
 import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from lib.semantic_search import Semantic_search
+from src.lib.semantic_search import Semantic_search
 
 class Cli:
     def __init__(self):
@@ -135,7 +135,7 @@ class Cli:
         map_pydantic.update({"answer": response})
         models.AnsweredQuestion(**map_pydantic)
         print(response)
-
+        return response
 
     def answer_dataset(self, student_search_results_path, save_directory):
         import torch
@@ -243,5 +243,5 @@ class Cli:
         # if not f2.exists():
         #     f2.parent.mkdir()
 
-if __name__ == "__main__":
-    fire.Fire(Cli)
+# if __name__ == "__main__":
+fire.Fire(Cli)
