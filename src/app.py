@@ -10,12 +10,12 @@ cli = Cli()
 
 
 
-@app.get("/max_chunk_size/{m}")
-def index(max_chunk_size: int):
-    chunker = Chunker(max_chunk_size)
+@app.post("/max_chunk_size/{m}")
+def index(m: int):
+    chunker = Chunker(m)
     chunks = chunker.chunker()
-    print(f"Ingestion complete! Indexed {len(chunks)} chunks under data/processed")
-    return {"chunks": chunks}
+    # print(f"Ingestion complete! Indexed {len(chunks)} chunks under data/processed")
+    return {"message": "the data is indexed and saved in disk"}
 
 
 @app.get("/answer/queyr/{q}")

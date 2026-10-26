@@ -243,5 +243,5 @@ class Cli:
         # if not f2.exists():
         #     f2.parent.mkdir()
 
-# if __name__ == "__main__":
-fire.Fire(Cli)
+if __name__ == "__main__":
+    fire.Fire(Cli)
