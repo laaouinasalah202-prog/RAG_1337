@@ -80,12 +80,12 @@ class KeyWordSearch:
         # return bm25tf
 
     def bm25_idf(self, token):
-        bm25_idf = 0
+        # bm25_idf = 0
         is_index = self.inverse_index.get(token)
         token_appearance = len(self.inverse_index[token]) if is_index else 0
         n_docs = len(self.doc_chunks)
         ratio = (n_docs - token_appearance + 0.5) / (token_appearance + 0.5)
-        bm25_idf += math.log(1 + ratio, 2)
+        bm25_idf = math.log(1 + ratio, 2)
         return bm25_idf
 
     def bm25(self, query, limit) -> Dict:

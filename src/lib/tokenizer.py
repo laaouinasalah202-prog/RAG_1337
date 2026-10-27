@@ -9,7 +9,7 @@ with open("src/lib/stop_word.txt", "r") as f:
 
 def term_toknizer(term: str) -> list:
     # pattern = r"[A-Z]+|[A-Z](?:[a-z]+)|[a-z]+\d*|\d+"
-    # pattern = r"[A-Z]+(?![a-z])|[A-Z][a-z]+(?:-\d+)?|[a-z]+|\d+"
+    # pattern = r"[A-Z]+(?![a-z])|[A-Z][a-z]+(?:-\d+)?|[a-z]+|\d+" Gpu LLM
     pattern = r"(?u)\b\w\w+\b"
 
     matched = re.findall(pattern, term)
