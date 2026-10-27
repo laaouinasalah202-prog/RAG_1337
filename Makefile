@@ -17,7 +17,8 @@ clean:
 	uv run cleanpy .
 
 lint:
-	uv run flake8 .
+	uv run flake8 src
+	uv run mypy src
 
 typecheck:
-	uv run mypy .
+	uv run mypy src

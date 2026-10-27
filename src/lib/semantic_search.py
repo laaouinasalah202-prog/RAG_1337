@@ -19,7 +19,9 @@ class Semantic_search:
 
     def __read_chunk(self, chunk):
         with open(chunk["path"], "r", encoding="utf-8", errors="replace") as f:
-            chunk_string = f.read()[chunk["first_character_index"]:chunk["last_character_index"]]
+            last = "last_character_index"
+            first = "first_character_index"
+            chunk_string = f.read()[chunk[first]:chunk[last]]
 
         return chunk_string
 
@@ -27,7 +29,7 @@ class Semantic_search:
         text_emb = self.model.encode([text])
         return text_emb
 
-    def __strAll_docs(self) -> str:
+    def __strAll_docs(self) -> list:
         all_chunks = []
         for chunk in self.chunks_index:
             all_chunks.append(self.__read_chunk(chunk))
@@ -43,8 +45,10 @@ class Semantic_search:
         self.chunk_embedding = chunks_embeddings
         with open(self.path_embeddings, "wb") as f:
             pickle.dump(self.chunk_embedding, f)
+
     def cosine_similarity(self, vec1, vec2):
-        return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+        norm_product = np.linalg.norm(vec1) * np.linalg.norm(vec2)
+        return np.dot(vec1, vec2) / norm_product
 
     def load_or_create_embeddings(self):
         if os.path.exists(self.path_embeddings):
@@ -53,8 +57,7 @@ class Semantic_search:
         else:
             self.embed_chunks()
 
-
-    def semantic_search(self, query, limit):
+    def semantic_search(self, query: str, limit: int) -> Dict:
         query_embd = self.__embed_text(query)
         self.load_or_create_embeddings()
         map_chunks_score: List[Dict] = []
@@ -63,15 +66,20 @@ class Semantic_search:
             map_chunks_score.append(
                 {
                     "chunk_indx": i,
-                    "cosine_similarity": float(self.cosine_similarity(query_embd, emb))
+                    "cosine_similarity": float(
+                        self.cosine_similarity(query_embd, emb))
                 }
             )
-        map_chunks_score = sorted(map_chunks_score, key=lambda item: item["cosine_similarity"], reverse=True)
+        map_chunks_score = sorted(map_chunks_score,
+                                  key=lambda item: item["cosine_similarity"],
+                                  reverse=True)
         with open("data/processed/index.json", "r") as f:
             doc_chunks = json.load(f)
         semantic_map = {
-                doc_chunks[r["chunk_indx"]]["id"]: {"chunk_indx": r["chunk_indx"], "cosine_similarity": r["cosine_similarity"]}
+            doc_chunks[r["chunk_indx"]]["id"]: {
+                "chunk_indx": r["chunk_indx"],
+                "cosine_similarity": r["cosine_similarity"],
+            }
             for r in map_chunks_score[:limit]
         }
         return semantic_map
-
