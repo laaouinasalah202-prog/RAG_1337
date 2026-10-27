@@ -15,12 +15,18 @@ class Cli:
         self.index_path = "data/processed/index.json"
 
     def index(self, max_chunk_size: int) -> None:
+        if max_chunk_size < 200:
+            raise ValueError("max_chunk_size must be greater them 200")
         chunker = Chunker(max_chunk_size)
-        chunks = chunker.chunker()
-        print(f"Ingestion complete! Indexed {len(chunks)}"
-              "chunks under data/processed")
+        chunks = chunker.chunker(max_chunk_size)
+        print(f"Ingestion complete! Indexed {len(chunks)} "
+              f"chunks under {self.index_path}")
 
     def search(self, query: str, k: int, printt: bool = True) -> list:
+        if k == 0:
+            raise ValueError("k must be a positive integer")
+        if len(query) == 0:
+            raise ValueError("the query is empty")
         if os.path.exists(self.index_path) is False:
             print("- Error: no chunks found in disk\n"
                   "- Run for example: uv run python3 -m src index "
@@ -43,6 +49,7 @@ class Cli:
 
         for r in format_result:
             models.MinimalSource(**r)
+
         if printt:
             for i in result:
                 chunk_path = chunks[i["chunk_indx"]]["path"]
@@ -76,6 +83,7 @@ class Cli:
                 models.MinimalSearchResults(**minimal_search_result))
             list_UnansweredQuestion.append(
                 models.UnansweredQuestion(**map_pydantic_unansered))
+
             retrieves.append(
                 {
                     "question_id": id,
@@ -262,7 +270,8 @@ class Cli:
         print(f"Questions evaluated: {len(my_result)}")
         for k in list_k:
             recall = self.calculate_recallk(k, golden_data, my_result)
-            print(f"Recall@{k}: {recall} ({recall * 100}%)")
+            percentage = round(recall* 100, 0)
+            print(f"Recall@{k}: {round(recall, 3)} ({percentage}%)")
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ import tqdm
 class Chunker:
     def __init__(self, max_chunk_size: int) -> None:
         self.max_chunk_size = max_chunk_size
-        self.overlap = self.max_chunk_size // 15
+        self.overlap = self.max_chunk_size // 20
         self.map_chunks: list[dict] = []
         self.map_file_stat: list = []
         self.root_path = Path("data/raw/vllm-0.10.1")
@@ -68,7 +68,8 @@ class Chunker:
         all_files = [str(f) for f in all_files]
         modified_files = []
         deleted_files = []
-        for file in self.map_file_stat:
+    
+        for file in self.map_file_stat[1:]:
             pth = Path(file["file_path"])
             if file["file_path"] not in all_files:
                 deleted_files.append(file["file_path"])
@@ -92,34 +93,37 @@ class Chunker:
             print(f"Reindixing modified files:\n{modified_files}")
             self.reindex_modified(modified_files)
 
-    def __index_exist(self):
+    def __index_exist(self, max_chunk_size):
         if all([os.path.exists("data/processed/index.json"),
                 os.path.exists("data/processed/file_stat.json")]):
             with open("data/processed/index.json", "r") as f:
                 self.map_chunks = json.load(f)
             with open("data/processed/file_stat.json", "r") as f:
                 self.map_file_stat = json.load(f)
+            if self.map_file_stat[0] != max_chunk_size:
+                return False
             self.check_modified_files()
             return True
         else:
             return False
 
-    def chunker(self):
-        if self.__index_exist():
+    def chunker(self, max_chunk_size: int):
+        if self.__index_exist(max_chunk_size):
             return self.map_chunks
-
+        self.map_file_stat = []
+        self.map_file_stat.append(max_chunk_size)
         print("Chunking all the data in vllm-0.10.1")
         p = self.root_path
         python_splitter = RecursiveCharacterTextSplitter.from_language(
             language=Language.PYTHON,
             add_start_index=True,
             chunk_size=self.max_chunk_size,
-            chunk_overlap=200
+            chunk_overlap=self.overlap
             )
         makrdown_splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.max_chunk_size,
             add_start_index=True,
-            chunk_overlap=200
+            chunk_overlap=self.overlap
             )
         files = list(p.rglob("*"))
         for pth in tqdm.tqdm(files):
