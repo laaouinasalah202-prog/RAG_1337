@@ -49,7 +49,9 @@ class Cli:
         chunks = chunker.chunker(max_chunk_size)
         print(f"Ingestion complete! Indexed {len(chunks)} "
               f"chunks under {self.index_path}")
-
+        print(f"embedding all the chunk in process ...")
+        self.embedding_model.load_or_create_embeddings()
+        print("Done")
     def search(self, query: str, k: int, printt: bool = True
                ) -> None:
         """Search the chunks that best match a query.
@@ -208,7 +210,7 @@ class Cli:
             str: The generated answer.
         """
         if k == 0:
-            raise ValueError("k must be a positive intiger")
+            raise ValueError("k must be a positive integer")
         model_name = "Qwen/Qwen3-0.6B"
         map_pydantic = {}
         tokenizer = AutoTokenizer.from_pretrained(model_name)

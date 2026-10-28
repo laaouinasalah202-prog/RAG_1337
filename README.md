@@ -1,12 +1,14 @@
 # the saving directory use Path when its better | structure of project according to subject [done]
 # tqdm long running process [done]
-# docstring
-# read the models and make sure they usefule
-# fix mypy check flake8
+# docstring [done]
+# read the models and make sure they usefule [done]
+# fix mypy check flake8 [done]
+# indexing when embedding [done]
+# cahche the query to the resource so when searching with the same k the same query
 # understand the lines you add in the toml
 # revise the equatios used
 # regex pattern used
-
+# readme.md
 
 
 # Moulinette
