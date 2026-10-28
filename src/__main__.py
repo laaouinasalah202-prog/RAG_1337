@@ -51,7 +51,7 @@ class Cli:
               f"chunks under {self.index_path}")
 
     def search(self, query: str, k: int, printt: bool = True
-               ) -> list:
+               ) -> None:
         """Search the chunks that best match a query.
 
         Run a hybrid search and either print the matching chunk
@@ -73,6 +73,7 @@ class Cli:
             ValueError: If ``k`` is 0 or the query is empty.
             Exception: If the chunk index file does not exist.
         """
+
         if k == 0:
             raise ValueError("k must be a positive integer")
         if len(query) == 0:
@@ -106,7 +107,7 @@ class Cli:
                 chunk_end_indx = chunks[i["chunk_indx"]][last]
                 print(f'{chunk_path} [{chunk_start_indx}:{chunk_end_indx}]')
         if printt is False:
-            return format_result
+            self.format_result = format_result
 
     def search_dataset(
             self, dataset_path: str,
@@ -128,13 +129,13 @@ class Cli:
             Exception: If the dataset file does not exist.
         """
 
-        dataset_path: Path = Path(dataset_path)
-        if not dataset_path.is_file():
+        datasetpath: Path = Path(dataset_path)
+        if not datasetpath.is_file():
             raise Exception("Dataset directory dose not exist")
-        with open(dataset_path, "r") as f:
+        with open(datasetpath, "r") as f:
             data_set = json.load(f)["rag_questions"]
-        save_directory = Path(save_directory)
-        save_directory.mkdir(parents=True, exist_ok=True)
+        savedirectory = Path(save_directory)
+        savedirectory.mkdir(parents=True, exist_ok=True)
 
         retrieves: list[dict] = []
         list_UnansweredQuestion = []
@@ -143,12 +144,12 @@ class Cli:
         for data in tqdm(data_set):
             query = data["question"]
             id = data["question_id"]
-            search_result = self.search(query, k, False)
+            self.search(query, k, False)
             map_pydantic_unansered = {"question_id": id, "question": query}
             minimal_search_result = {
                 "question_id": id,
                 "question": query,
-                "retrieved_sources": search_result}
+                "retrieved_sources": self.format_result}
 
             list_Minimal_search_result.append(
                 models.MinimalSearchResults(**minimal_search_result))
@@ -163,7 +164,7 @@ class Cli:
                         {"file_path": r["file_path"],
                          "first_character_index": r["first_character_index"],
                          "last_character_index": r["last_character_index"]}
-                        for r in search_result
+                        for r in self.format_result
                         ]
                 }
             )
@@ -172,7 +173,7 @@ class Cli:
             search_results=list_Minimal_search_result, k=k)
 
         dump_result = {"search_results": retrieves, "k": k}
-        with open(save_directory.joinpath(dataset_path.name), "w") as f:
+        with open(savedirectory.joinpath(datasetpath.name), "w") as f:
             json.dump(dump_result, f, indent=4)
 
     def __read_chunk(self, chunk):
@@ -216,7 +217,8 @@ class Cli:
             torch_dtype="auto",
             device_map="auto"
         )
-        search_result = self.search(query, k, False)
+        self.search(query, k, False)
+        search_result = self.format_result
         search_result_list = [models.MinimalSource(**result)
                               for result in search_result]
         map_pydantic.update({"question": query, "sources": search_result_list})
@@ -250,12 +252,15 @@ class Cli:
             enable_thinking=False
         )
         inputs = tokenizer(text, return_tensors="pt")
-        response_ids = model.generate(
+        response_ids = model.generate(  # type: ignore[misc]
             **inputs,
             max_new_tokens=3000)[0][len(inputs.input_ids[0]):].tolist()
         response = tokenizer.decode(response_ids, skip_special_tokens=True)
         map_pydantic.update({"answer": response})
-        models.AnsweredQuestion(**map_pydantic)
+
+        models.AnsweredQuestion(question=query,
+                                sources=search_result_list,
+                                answer=str(response))
 
         return response
 

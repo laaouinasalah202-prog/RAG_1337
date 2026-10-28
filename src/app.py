@@ -19,7 +19,7 @@ def index(m: int):
     """
 
     chunker = Chunker(m)
-    chunker.chunker()
+    chunker.chunker(m)
     return {"message": "the data is indexed and saved in disk"}
 
 
