@@ -3,23 +3,69 @@ from typing import List
 
 
 class Rrf_Search:
+    """Rank document chunks by combining BM25 and semantic search.
+
+    Run a keyword search and a vector search for the same query,
+    normalize both scores, blend them with a weight, and rank the
+    chunks with a reciprocal rank formula.
+
+    Attributes:
+        semantic_search: Embedding model exposing a ``semantic_search``
+            method.
+        bm25_result (KeyWordSearch): Keyword search engine.
+        query (str): The search query.
+        limit (int): Maximum number of results for each search.
+        vector_search (dict): Semantic results, set by ``__search``.
+        bm25 (dict): BM25 results, set by ``__search``.
+    """
+
     def __init__(self, query, limit, embedding_model):
+        """Initialize the hybrid search.
+
+        Args:
+            query (str): The search query.
+            limit (int): Maximum number of results for each search.
+            embedding_model: Embedding model exposing a
+                ``semantic_search(query, limit)`` method.
+        """
+
         self.semantic_search = embedding_model
         self.bm25_result = KeyWordSearch()
         self.query = query
         self.limit = limit
 
     def __search(self):
+        """Run the semantic search and the BM25 search.
+
+        Store the results in ``self.vector_search`` and ``self.bm25``.
+        """
         self.vector_search = self.semantic_search.semantic_search(
             self.query, self.limit)
         self.bm25 = self.bm25_result.bm25(self.query, self.limit)
 
     def score_normalize(self, score, max, min) -> float:
+        """Scale a score to the range 0 to 1 using min-max scaling.
+
+        Args:
+            score (float): The score to normalize.
+            max (float): The highest score of the result set.
+            min (float): The lowest score of the result set.
+
+        Returns:
+            float: The normalized score, or 0 if ``max`` equals ``min``.
+        """
+
         if max - min == 0:
             return 0
         return (score - min) / (max - min)
 
     def score_normalization(self):
+        """Normalize the BM25 and cosine similarity scores in place.
+
+        Apply min-max scaling separately to ``self.bm25`` and
+        ``self.vector_search``, so both scores lie between 0 and 1.
+        """
+
         max_bm25 = max(self.bm25.items(),
                        key=lambda item: item[1]["bm25_score"])[1]["bm25_score"]
         min_bm25 = min(self.bm25.items(),
@@ -42,6 +88,21 @@ class Rrf_Search:
             s[1].update({"cosine_similarity": new_score})
 
     def weight_normalization(self, alpha) -> list:
+        """Combine the BM25 and semantic scores with a weight.
+
+        For each chunk found by BM25, compute
+        ``alpha * bm25 + (1 - alpha) * semantic``. A chunk missing from
+        the semantic results gets a semantic score of 0.
+
+        Args:
+            alpha (float): Weight of the BM25 score, between 0 and 1.
+
+        Returns:
+            list[dict]: Dicts with the keys ``chunk_indx``, ``score``,
+                ``bm25_score`` and ``semantic_score``, sorted from
+                highest to lowest ``score``.
+        """
+
         weight_combo: list[dict] = []
         for chunk_id, chunk_metadat in self.bm25.items():
             if self.vector_search.get(chunk_id):
@@ -66,6 +127,21 @@ class Rrf_Search:
         return weight_combo
 
     def rrf_search(self, k: int = 60) -> List:
+        """Search and rank chunks with reciprocal rank fusion.
+
+        Run both searches, normalize the scores, blend them with a BM25
+        weight of 0.7, and give each chunk the score
+        ``1 / (rank + k)``.
+
+        Args:
+            k (int): Smoothing constant of the rank formula. Defaults
+                to 60.
+
+        Returns:
+            list: Dicts with the keys ``chunk_indx`` and ``rrf``,
+                sorted from highest to lowest ``rrf``.
+        """
+
         self.__search()
         self.score_normalization()
 

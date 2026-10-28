@@ -7,7 +7,26 @@ import tqdm
 
 
 class Chunker:
+    """Split Python, Markdown and text files into indexed chunks.
+
+    Walk the ``data/raw/vllm-0.10.1`` directory, split each supported
+    file into overlapping chunks, and store chunk metadata and file
+    modification times in JSON files under ``data/processed``.
+
+    Attributes:
+        max_chunk_size (int): Maximum size of a chunk in characters.
+        overlap (int): Overlap between chunks, 5% of the chunk size.
+        map_chunks (list[dict]): Metadata of every chunk created.
+        map_file_stat (list): The chunk size used, followed by one
+            ``{"file_path", "index_time"}`` dict per indexed file.
+        root_path (Path): Root directory of the files to chunk.
+    """
     def __init__(self, max_chunk_size: int) -> None:
+        """Initialize the chunker.
+
+        Args:
+            max_chunk_size (int): Maximum size of a chunk in characters.
+        """
         self.max_chunk_size = max_chunk_size
         self.overlap = self.max_chunk_size // 20
         self.map_chunks: list[dict] = []
@@ -15,6 +34,17 @@ class Chunker:
         self.root_path = Path("data/raw/vllm-0.10.1")
 
     def reindex_modified(self, modified_files: list) -> None:
+        """Re-chunk the given files and save the updated indexes.
+
+        Split each ``.py``, ``.md`` and ``.txt`` file, record its new
+        modification time, append the chunk metadata, and write
+        ``data/processed/file_stat.json`` and
+        ``data/processed/index.json``. Skip files that are not
+        supported or cannot be decoded.
+
+        Args:
+            modified_files (list): Paths of the files to re-chunk.
+        """
         python_splitter = RecursiveCharacterTextSplitter.from_language(
             language=Language.PYTHON,
             add_start_index=True,
@@ -64,11 +94,19 @@ class Chunker:
             json.dump(self.map_chunks, f, indent=4)
 
     def check_modified_files(self):
+        """Detect modified and deleted files and update the indexes.
+
+        Compare the files on disk with the recorded modification times.
+        Remove the chunks and stats of modified and deleted files, then
+        re-chunk the modified files with ``reindex_modified``. Print a
+        message if nothing changed.
+        """
+
         all_files = (self.root_path).rglob("*")
         all_files = [str(f) for f in all_files]
         modified_files = []
         deleted_files = []
-    
+
         for file in self.map_file_stat[1:]:
             pth = Path(file["file_path"])
             if file["file_path"] not in all_files:
@@ -94,6 +132,18 @@ class Chunker:
             self.reindex_modified(modified_files)
 
     def __index_exist(self, max_chunk_size):
+        """Load the saved indexes if they exist and are still valid.
+
+        Read ``index.json`` and ``file_stat.json``. If the saved chunk
+        size differs from ``max_chunk_size``, the indexes are unusable.
+        Otherwise, refresh them with ``check_modified_files``.
+
+        Args:
+            max_chunk_size (int): Chunk size the indexes must match.
+
+        Returns:
+            bool: True if valid indexes were loaded, False otherwise.
+        """
         if all([os.path.exists("data/processed/index.json"),
                 os.path.exists("data/processed/file_stat.json")]):
             with open("data/processed/index.json", "r") as f:
@@ -108,6 +158,22 @@ class Chunker:
             return False
 
     def chunker(self, max_chunk_size: int):
+        """Return the chunk metadata, building the indexes if needed.
+
+        Reuse the saved indexes when they exist and match
+        ``max_chunk_size``. Otherwise, split every ``.py``, ``.md`` and
+        ``.txt`` file under ``self.root_path`` and save the results to
+        ``data/processed``.
+
+        Args:
+            max_chunk_size (int): Chunk size the indexes must match.
+
+        Returns:
+            list[dict]: Chunk metadata, each with the keys ``id``,
+                ``path``, ``first_character_index`` and
+                ``last_character_index``.
+        """
+
         if self.__index_exist(max_chunk_size):
             return self.map_chunks
         self.map_file_stat = []
@@ -164,6 +230,18 @@ class Chunker:
         return self.map_chunks
 
     def save_metadata(self, chunks, path: Path):
+        """Build and store the metadata of each chunk of a file.
+
+        Create a dict with a unique ID, the file path, and the start and
+        end character indices of the chunk, and append it to
+        ``self.map_chunks``.
+
+        Args:
+            chunks (list): Documents returned by the text splitter, each
+                with a ``start_index`` in its metadata.
+            path (Path): Path of the file the chunks come from.
+        """
+
         for chunk in chunks:
             last_endx = chunk.metadata["start_index"] + len(chunk.page_content)
             metadata = {

@@ -9,12 +9,31 @@ cli = Cli()
 
 @app.post("/max_chunk_size/{m}")
 def index(m: int):
+    """Chunk the documents and save the index to disk.
+
+    Args:
+        m (int): Maximum size of a chunk in characters.
+
+    Returns:
+        dict: A message confirming that the data was indexed.
+    """
+
     chunker = Chunker(m)
     chunker.chunker()
     return {"message": "the data is indexed and saved in disk"}
 
 
-@app.get("/answer/queyr/{q}")
+@app.get("/answer/queyr/{query}")
 def answear_query(query: str, k: int):
-    response = cli.answear(query, k)
+    """Answer a question using the retrieved chunks as context.
+
+    Args:
+        query (str): The question to answer.
+        k (int): Number of chunks to retrieve as context.
+
+    Returns:
+        dict: The generated answer, under the key ``response``.
+    """
+
+    response = cli.answer(query, k)
     return {"response": response}
