@@ -200,14 +200,17 @@ My first BM25 version only reached 76% recall@5 because the tokenization did not
 # Install dependencies
 make install
 
-# Build the index (default max_chunk_size is 2000)
-make index
+# Build the index
+uv run python3 -m src index --max_chunk_size 2000
 
 # Search a single query
 uv run python -m src search "How to configure the OpenAI server?" --k 5
 
 # Search a whole dataset
-make search_dataset
+ uv run python -m src search_dataset --dataset_path data/datasets/public/UnansweredQuestions/dataset_docs_public.json --k 10 --save_directory data/output/search_result
+s/UnansweredQuestions
+
+
 
 # Evaluate your own recall@k
 uv run python -m src evaluate \
@@ -215,7 +218,8 @@ uv run python -m src evaluate \
     --dataset_path data/datasets/AnsweredQuestions/dataset_docs_public.json
 
 # Generate answers for a whole dataset
-make answer_dataset
+uv run python -m src answer_dataset --student_search_results_path data/output/search_results/UnansweredQuestions/dataset_code_private.json --save_directory data/outpu
+t/search_results_and_answer/UnansweredQuestions
 ```
 
 ---

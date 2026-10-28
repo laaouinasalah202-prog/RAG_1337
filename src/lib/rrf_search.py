@@ -1,5 +1,6 @@
 from src.lib.bm25_search import KeyWordSearch
 from typing import List
+from src.lib.semantic_search import Semantic_search
 
 
 class Rrf_Search:
@@ -19,7 +20,8 @@ class Rrf_Search:
         bm25 (dict): BM25 results, set by ``__search``.
     """
 
-    def __init__(self, query, limit, embedding_model):
+    def __init__(self, query: str, limit: int,
+                 embedding_model: Semantic_search) -> None:
         """Initialize the hybrid search.
 
         Args:
@@ -34,7 +36,7 @@ class Rrf_Search:
         self.query = query
         self.limit = limit
 
-    def __search(self):
+    def __search(self) -> None:
         """Run the semantic search and the BM25 search.
 
         Store the results in ``self.vector_search`` and ``self.bm25``.
@@ -43,7 +45,7 @@ class Rrf_Search:
             self.query, self.limit)
         self.bm25 = self.bm25_result.bm25(self.query, self.limit)
 
-    def score_normalize(self, score, max, min) -> float:
+    def score_normalize(self, score: float, max: float, min: float) -> float:
         """Scale a score to the range 0 to 1 using min-max scaling.
 
         Args:
@@ -59,7 +61,7 @@ class Rrf_Search:
             return 0
         return (score - min) / (max - min)
 
-    def score_normalization(self):
+    def score_normalization(self) -> None:
         """Normalize the BM25 and cosine similarity scores in place.
 
         Apply min-max scaling separately to ``self.bm25`` and
@@ -87,7 +89,7 @@ class Rrf_Search:
                                              max_vec_search, min_vec_search)
             s[1].update({"cosine_similarity": new_score})
 
-    def weight_normalization(self, alpha) -> list:
+    def weight_normalization(self, alpha: float) -> list:
         """Combine the BM25 and semantic scores with a weight.
 
         For each chunk found by BM25, compute

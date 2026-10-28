@@ -77,12 +77,9 @@ class Chunker:
                         pth.suffix.lower() == ".md",
                         pth.suffix.lower() == ".txt"
                     ]):
-                try:
-                    docs = pth.read_text()
-                    chunks = makrdown_splitter.create_documents([docs])
-                    self.save_metadata(chunks, pth)
-                except UnicodeDecodeError:
-                    pass
+                docs = pth.read_text()
+                chunks = makrdown_splitter.create_documents([docs])
+                self.save_metadata(chunks, pth)
 
             else:
                 continue
@@ -93,7 +90,7 @@ class Chunker:
         with open(index_path, "w") as f:
             json.dump(self.map_chunks, f, indent=4)
 
-    def check_modified_files(self):
+    def check_modified_files(self) -> None:
         """Detect modified and deleted files and update the indexes.
 
         Compare the files on disk with the recorded modification times.
@@ -102,8 +99,8 @@ class Chunker:
         message if nothing changed.
         """
 
-        all_files = (self.root_path).rglob("*")
-        all_files = [str(f) for f in all_files]
+        files = (self.root_path).rglob("*")
+        all_files = [str(f) for f in files]
         modified_files = []
         deleted_files = []
 
@@ -130,8 +127,9 @@ class Chunker:
         if len(modified_files) > 0:
             print(f"Reindixing modified files:\n{modified_files}")
             self.reindex_modified(modified_files)
+        return
 
-    def __index_exist(self, max_chunk_size):
+    def __index_exist(self, max_chunk_size: int) -> bool:
         """Load the saved indexes if they exist and are still valid.
 
         Read ``index.json`` and ``file_stat.json``. If the saved chunk
@@ -157,7 +155,7 @@ class Chunker:
         else:
             return False
 
-    def chunker(self, max_chunk_size: int):
+    def chunker(self, max_chunk_size: int) -> list[dict]:
         """Return the chunk metadata, building the indexes if needed.
 
         Reuse the saved indexes when they exist and match
@@ -208,12 +206,9 @@ class Chunker:
             elif pth.is_file() and any(
                     [pth.suffix.lower() == ".md", pth.suffix.lower() == ".txt"]
                     ):
-                try:
-                    docs = pth.read_text(errors="replace")
-                    chunks = makrdown_splitter.create_documents([docs])
-                    self.save_metadata(chunks, pth)
-                except UnicodeDecodeError:
-                    pass
+                docs = pth.read_text(errors="replace")
+                chunks = makrdown_splitter.create_documents([docs])
+                self.save_metadata(chunks, pth)
             else:
                 continue
 
@@ -229,7 +224,7 @@ class Chunker:
             json.dump(self.map_chunks, f, indent=4)
         return self.map_chunks
 
-    def save_metadata(self, chunks, path: Path):
+    def save_metadata(self, chunks: list, path: Path) -> None:
         """Build and store the metadata of each chunk of a file.
 
         Create a dict with a unique ID, the file path, and the start and

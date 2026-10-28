@@ -24,7 +24,7 @@ class KeyWordSearch:
         all_doc_len (int): Total length, in characters, of all chunks.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
 
         """Initialize the search engine.
 
@@ -37,13 +37,13 @@ class KeyWordSearch:
             json.JSONDecodeError: If the index file is not valid JSON.
         """
 
-        self.inverse_index = {}
+        self.inverse_index: dict = {}
         with open("data/processed/index.json", "r") as f:
             self.doc_chunks = json.load(f)
         self.index_pickle_path = "data/processed/index.pkl"
         self.all_doc_len = self._calculate_doc_lenght()
 
-    def __read_chunk(self, chunk):
+    def __read_chunk(self, chunk: dict) -> str:
         """Read the text of a single chunk from its source file.
 
         Args:
@@ -60,7 +60,7 @@ class KeyWordSearch:
             chunk_string = f.read()[start:end]
         return chunk_string
 
-    def _build_inverse_indx(self):
+    def _build_inverse_indx(self) -> None:
         """Build the inverted index from all chunks and save it to disk.
 
         Read and tokenize every chunk, count how many times each token
@@ -91,7 +91,7 @@ class KeyWordSearch:
         with open(self.index_pickle_path, "wb") as f:
             pickle.dump(self.inverse_index, f)
 
-    def load_or_creatIndex(self):
+    def load_or_creatIndex(self) -> None:
         """Load the inverted index from the cache, or build it if missing.
 
         If ``self.index_pickle_path`` exists, load the index from it.
@@ -119,7 +119,7 @@ class KeyWordSearch:
             all_docs_lenght += end - start
         return all_docs_lenght
 
-    def bm25_tf(self, token, chunk_id, chunk_len):
+    def bm25_tf(self, token: str, chunk_id: int, chunk_len: int) -> float:
         """Compute the BM25 term-frequency score of a token in a chunk.
 
         Use ``k = 1.2`` and ``b = 0.75``, with length normalization
@@ -145,7 +145,7 @@ class KeyWordSearch:
             bm25tf = (tf * (k + 1)) / (tf + k * lenght_normalization)
         return bm25tf
 
-    def bm25_idf(self, token):
+    def bm25_idf(self, token: str) -> float:
         """Compute the BM25 inverse document frequency of a token.
 
         Use a base-2 logarithm: ``log2(1 + (N - n + 0.5) / (n + 0.5))``,
@@ -166,7 +166,7 @@ class KeyWordSearch:
         bm25_idf = math.log(1 + ratio, 2)
         return bm25_idf
 
-    def bm25(self, query, limit) -> Dict:
+    def bm25(self, query: str, limit: int) -> Dict:
         """Search the chunks for a query and rank results with BM25.
 
         Tokenize the query, load or build the inverted index, score every
@@ -188,7 +188,7 @@ class KeyWordSearch:
         self.load_or_creatIndex()
 
         for i, chunk in enumerate(self.doc_chunks):
-            score = 0
+            score: float = 0
             start = chunk["first_character_index"]
             end = chunk["last_character_index"]
             chunk_len = end - start

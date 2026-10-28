@@ -5,6 +5,7 @@ import numpy as np
 from typing import Dict, List
 import os
 import pickle
+from numpy import ndarray
 
 
 class Semantic_search:
@@ -24,7 +25,7 @@ class Semantic_search:
         chunk_embedding (list): Embedding vector of each chunk.
     """
 
-    def __init__(self, model_name):
+    def __init__(self, model_name: str) -> None:
         """Initialize the semantic search.
 
         Load the chunk metadata if ``data/processed/index.json`` exists,
@@ -40,9 +41,9 @@ class Semantic_search:
         self.model_name = model_name
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
         self.path_embeddings = "data/processed/embeddings.pkl"
-        self.chunk_embedding = []
+        self.chunk_embedding: list = []
 
-    def __read_chunk(self, chunk):
+    def __read_chunk(self, chunk: dict) -> str:
         """Read the text of a single chunk from its source file.
 
         Args:
@@ -60,7 +61,7 @@ class Semantic_search:
 
         return chunk_string
 
-    def __embed_text(self, text):
+    def __embed_text(self, text: str) -> ndarray:
         """Embed a single text with the model.
 
         Args:
@@ -87,7 +88,7 @@ class Semantic_search:
             all_chunks.append(self.__read_chunk(chunk))
         return all_chunks
 
-    def embed_chunks(self):
+    def embed_chunks(self) -> None:
         """Embed every chunk and save the embeddings to disk.
 
         Read and encode each chunk, store the vectors in
@@ -105,7 +106,7 @@ class Semantic_search:
         with open(self.path_embeddings, "wb") as f:
             pickle.dump(self.chunk_embedding, f)
 
-    def cosine_similarity(self, vec1, vec2):
+    def cosine_similarity(self, vec1: ndarray, vec2: ndarray) -> float:
         """Compute the cosine similarity between two vectors.
 
         Args:
@@ -119,7 +120,7 @@ class Semantic_search:
         norm_product = np.linalg.norm(vec1) * np.linalg.norm(vec2)
         return np.dot(vec1, vec2) / norm_product
 
-    def load_or_create_embeddings(self):
+    def load_or_create_embeddings(self) -> None:
         """Load the embeddings from the cache, or build them if missing.
 
         If ``self.path_embeddings`` exists, load the embeddings from it.

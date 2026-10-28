@@ -8,7 +8,7 @@ cli = Cli()
 
 
 @app.post("/max_chunk_size/{m}")
-def index(m: int):
+def index(m: int) -> dict:
     """Chunk the documents and save the index to disk.
 
     Args:
@@ -24,7 +24,7 @@ def index(m: int):
 
 
 @app.get("/answer/queyr/{query}")
-def answear_query(query: str, k: int):
+def answear_query(query: str, k: int) -> dict:
     """Answer a question using the retrieved chunks as context.
 
     Args:

@@ -12,7 +12,7 @@ from tqdm import tqdm
 import hashlib
 
 
-def cache_query(query, search_result, k):
+def cache_query(query: str, search_result: list, k: int) -> None:
     cache_query_path = Path("data/processed")
     file_name = "cache_query.json"
     if not cache_query_path.is_dir():
@@ -31,6 +31,7 @@ def cache_query(query, search_result, k):
     })
     with open(cache_query_path.joinpath(file_name), "w") as f:
         json.dump(cache_query, f, indent=4)
+
 
 class Cli:
     """Command-line interface of the retrieval-augmented system.
@@ -70,7 +71,7 @@ class Cli:
         chunks = chunker.chunker(max_chunk_size)
         print(f"Ingestion complete! Indexed {len(chunks)} "
               f"chunks under {self.index_path}")
-        print(f"embedding all the chunk in process ...")
+        print("embedding all the chunk in process ...")
         self.embedding_model.load_or_create_embeddings()
         print("Done")
 
@@ -211,7 +212,7 @@ class Cli:
         with open(savedirectory.joinpath(datasetpath.name), "w") as f:
             json.dump(dump_result, f, indent=4)
 
-    def __read_chunk(self, chunk):
+    def __read_chunk(self, chunk: dict) -> str:
         """Read the text of a chunk from its source file.
 
         Args:
@@ -299,7 +300,8 @@ class Cli:
 
         return response
 
-    def answer_dataset(self, student_search_results_path, save_directory):
+    def answer_dataset(self, student_search_results_path: str,
+                       save_directory: str) -> None:
         """Answer every question of a saved search result file.
 
         Read the retrieved sources of each question, generate an answer
@@ -323,8 +325,8 @@ class Cli:
             torch_dtype=torch.float32,
             device_map="auto"
         )
-        save_directory = Path(save_directory)
-        save_directory.mkdir(parents=True, exist_ok=True)
+        savedirectory = Path(save_directory)
+        savedirectory.mkdir(parents=True, exist_ok=True)
         student_results_path = Path(student_search_results_path)
         if not student_results_path.is_file():
             raise Exception(
@@ -369,7 +371,7 @@ class Cli:
                 enable_thinking=False
             )
             inputs = tokenizer(text, return_tensors="pt")
-            response_ids = model.generate(
+            response_ids = model.generate(  # type: ignore[misc]
                 **inputs,
                 max_new_tokens=32768)[0][len(inputs.input_ids[0]):].tolist()
             response = tokenizer.decode(response_ids, skip_special_tokens=True)
@@ -394,7 +396,7 @@ class Cli:
             search_results=list_minimal_answer, k=k)
 
         dump_result = {"search_results": answear_data, "k": k}
-        save_path = save_directory.joinpath(student_results_path.name)
+        save_path = savedirectory.joinpath(student_results_path.name)
         with open(save_path, "w") as f:
             json.dump(dump_result, f, indent=4)
         print(f"Loaded {len(data_set)} questions ..."
@@ -402,7 +404,7 @@ class Cli:
         print(f"Saved student_search_results_and_answer to ..."
               f"{save_path.parts[-2]}/{save_path.parts[-1]}")
 
-    def calculate_recallk(self, k, golden_data, my_result):
+    def calculate_recallk(self, k: int, golden_data: list, my_result: list):
         """Calculate the recall at ``k`` of the retrieved sources.
 
         Count a question as found when the file of its first golden
@@ -428,7 +430,8 @@ class Cli:
                 count += 1
         return count / len(my_result)
 
-    def evaluate(self, student_search_results_path, dataset_path):
+    def evaluate(self, student_search_results_path: str,
+                 dataset_path: str) -> None:
         """Evaluate the retrieval quality and print the recall.
 
         Compute and print the recall at 1, 3, 5 and 10 by comparing the
@@ -475,4 +478,7 @@ class Cli:
 
 
 if __name__ == "__main__":
-    fire.Fire(Cli)
+    try:
+        fire.Fire(Cli)
+    except Exception as e:
+        print(e)
