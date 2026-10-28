@@ -6,3 +6,6 @@ data
 __pycache__
 .python-version
 moulinette
+exam_answer.sh
+exam_edge_cases.sh
+exam_retrieval.sh

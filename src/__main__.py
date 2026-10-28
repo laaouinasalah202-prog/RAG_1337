@@ -9,7 +9,28 @@ from src.lib.semantic_search import Semantic_search
 import torch
 from pathlib import Path
 from tqdm import tqdm
+import hashlib
 
+
+def cache_query(query, search_result, k):
+    cache_query_path = Path("data/processed")
+    file_name = "cache_query.json"
+    if not cache_query_path.is_dir():
+        raise Exception("data/processed dose not exist")
+    if not cache_query_path.joinpath(file_name).is_file():
+        cache_query = {}
+    else:
+        with open(cache_query_path.joinpath(file_name), "r") as f:
+            cache_query = json.load(f)
+    query_hash = hashlib.sha256((query+str(k)).encode("utf-8")).hexdigest()
+
+    cache_query.update({
+        query_hash: {
+            "resources": search_result
+        }
+    })
+    with open(cache_query_path.joinpath(file_name), "w") as f:
+        json.dump(cache_query, f, indent=4)
 
 class Cli:
     """Command-line interface of the retrieval-augmented system.
@@ -52,6 +73,7 @@ class Cli:
         print(f"embedding all the chunk in process ...")
         self.embedding_model.load_or_create_embeddings()
         print("Done")
+
     def search(self, query: str, k: int, printt: bool = True
                ) -> None:
         """Search the chunks that best match a query.
@@ -75,7 +97,6 @@ class Cli:
             ValueError: If ``k`` is 0 or the query is empty.
             Exception: If the chunk index file does not exist.
         """
-
         if k == 0:
             raise ValueError("k must be a positive integer")
         if len(query) == 0:
@@ -85,8 +106,20 @@ class Cli:
                             "- Run for example: uv run python3 -m src index "
                             "--max_chunk_size 2000")
 
-        rrf_search = Rrf_Search(query, k, self.embedding_model)
-        result = rrf_search.rrf_search()
+        cache_query_path = Path("data/processed/cache_query.json")
+        if cache_query_path.is_file():
+            with open(cache_query_path, "r") as f:
+                cache_query_map = json.load(f)
+        else:
+            cache_query_map = {}
+        query_hash = hashlib.sha256((query+str(k)).encode("utf-8")).hexdigest()
+        if query_hash in cache_query_map:
+            result = cache_query_map.get(query_hash).get("resources")
+        else:
+            rrf_search = Rrf_Search(query, k, self.embedding_model)
+            result = rrf_search.rrf_search()
+            cache_query(query, result, k)
+
         with open(self.index_path, "r") as f:
             chunks = json.load(f)
         last = "last_character_index"
