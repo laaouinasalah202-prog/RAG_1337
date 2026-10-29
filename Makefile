@@ -1,4 +1,3 @@
-
 .PHONY: install run debug clean lint typecheck
 
 PYTHON = python3
@@ -18,7 +17,4 @@ clean:
 
 lint:
 	uv run flake8 src
-	uv run mypy src
-
-typecheck:
 	uv run mypy src

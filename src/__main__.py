@@ -170,7 +170,7 @@ class Cli:
 
         datasetpath: Path = Path(dataset_path)
         if not datasetpath.is_file():
-            raise Exception("Dataset directory dose not exist")
+            raise Exception("Dataset path dose not exist")
         with open(datasetpath, "r") as f:
             data_set = json.load(f)["rag_questions"]
         savedirectory = Path(save_directory)
