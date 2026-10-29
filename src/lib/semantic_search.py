@@ -104,7 +104,6 @@ class Semantic_search:
         print("chunking with tqdm")
         for chunk in tqdm.tqdm(all_chunkstr):
             chunks_embeddings.append(self.model.encode(chunk))
-            break
 
         self.chunk_embedding = chunks_embeddings
         with open(self.path_embeddings, "wb") as f:
