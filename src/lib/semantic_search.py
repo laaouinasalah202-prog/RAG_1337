@@ -6,6 +6,7 @@ from typing import Dict, List
 import os
 import pickle
 from numpy import ndarray
+from pathlib import Path
 
 
 class Semantic_search:
@@ -25,7 +26,8 @@ class Semantic_search:
         chunk_embedding (list): Embedding vector of each chunk.
     """
 
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str,
+                 index_path: Path = Path("data/processed/index.json")) -> None:
         """Initialize the semantic search.
 
         Load the chunk metadata if ``data/processed/index.json`` exists,
@@ -35,13 +37,14 @@ class Semantic_search:
             model_name (str): Name of the embedding model.
         """
 
-        if os.path.exists("data/processed/index.json"):
-            with open("data/processed/index.json", "r") as f:
+        if os.path.exists(index_path):
+            with open(index_path, "r") as f:
                 self.chunks_index = json.load(f)
         self.model_name = model_name
         self.model = SentenceTransformer("all-MiniLM-L6-v2")
-        self.path_embeddings = "data/processed/embeddings.pkl"
+        self.path_embeddings = index_path.parent.joinpath("embeddings.pkl")
         self.chunk_embedding: list = []
+        self.index_path = index_path
 
     def __read_chunk(self, chunk: dict) -> str:
         """Read the text of a single chunk from its source file.
@@ -101,6 +104,7 @@ class Semantic_search:
         print("chunking with tqdm")
         for chunk in tqdm.tqdm(all_chunkstr):
             chunks_embeddings.append(self.model.encode(chunk))
+            break
 
         self.chunk_embedding = chunks_embeddings
         with open(self.path_embeddings, "wb") as f:
@@ -165,7 +169,7 @@ class Semantic_search:
         map_chunks_score = sorted(map_chunks_score,
                                   key=lambda item: item["cosine_similarity"],
                                   reverse=True)
-        with open("data/processed/index.json", "r") as f:
+        with open(self.index_path, "r") as f:
             doc_chunks = json.load(f)
         semantic_map = {
             doc_chunks[r["chunk_indx"]]["id"]: {

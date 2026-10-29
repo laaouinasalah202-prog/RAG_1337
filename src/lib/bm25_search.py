@@ -5,6 +5,7 @@ import json
 import math
 from typing import Dict, List
 from tqdm import tqdm
+from pathlib import Path
 
 
 class KeyWordSearch:
@@ -24,7 +25,7 @@ class KeyWordSearch:
         all_doc_len (int): Total length, in characters, of all chunks.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, save_path: Path = Path("data/processed")) -> None:
 
         """Initialize the search engine.
 
@@ -36,11 +37,11 @@ class KeyWordSearch:
                 missing.
             json.JSONDecodeError: If the index file is not valid JSON.
         """
-
         self.inverse_index: dict = {}
-        with open("data/processed/index.json", "r") as f:
+        self.index_path = save_path.joinpath("index.json")
+        with open(self.index_path, "r") as f:
             self.doc_chunks = json.load(f)
-        self.index_pickle_path = "data/processed/index.pkl"
+        self.index_pickle_path = save_path.joinpath("index.pkl")
         self.all_doc_len = self._calculate_doc_lenght()
 
     def __read_chunk(self, chunk: dict) -> str:

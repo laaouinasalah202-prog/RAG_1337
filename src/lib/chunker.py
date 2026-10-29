@@ -21,12 +21,17 @@ class Chunker:
             ``{"file_path", "index_time"}`` dict per indexed file.
         root_path (Path): Root directory of the files to chunk.
     """
-    def __init__(self, max_chunk_size: int) -> None:
+    def __init__(self, max_chunk_size: int,
+                 save_path: Path = Path("data/processed")) -> None:
         """Initialize the chunker.
 
         Args:
             max_chunk_size (int): Maximum size of a chunk in characters.
         """
+        save_path.mkdir(exist_ok=True)
+        self.file_stat_pat = save_path.joinpath("file_stat.json")
+        self.index_path = save_path.joinpath("index.json")
+        self.file_stat_pat = save_path.joinpath("file_stat.json")
         self.max_chunk_size = max_chunk_size
         self.overlap = self.max_chunk_size // 20
         self.map_chunks: list[dict] = []
@@ -84,10 +89,10 @@ class Chunker:
             else:
                 continue
 
-        with open("data/processed/file_stat.json", "w") as f:
+        with open(self.file_stat_pat, "w") as f:
             json.dump(self.map_file_stat, f, indent=4)
-        index_path = "data/processed/index.json"
-        with open(index_path, "w") as f:
+
+        with open(self.index_path, "w") as f:
             json.dump(self.map_chunks, f, indent=4)
 
     def check_modified_files(self) -> None:
@@ -142,11 +147,10 @@ class Chunker:
         Returns:
             bool: True if valid indexes were loaded, False otherwise.
         """
-        if all([os.path.exists("data/processed/index.json"),
-                os.path.exists("data/processed/file_stat.json")]):
-            with open("data/processed/index.json", "r") as f:
+        if self.index_path.is_file() and self.file_stat_pat.is_file():
+            with open(self.index_path, "r") as f:
                 self.map_chunks = json.load(f)
-            with open("data/processed/file_stat.json", "r") as f:
+            with open(self.file_stat_pat, "r") as f:
                 self.map_file_stat = json.load(f)
             if self.map_file_stat[0] != max_chunk_size:
                 return False
@@ -212,15 +216,12 @@ class Chunker:
             else:
                 continue
 
-        index_path = "data/processed/index.json"
-        map_file_stat = "data/processed/file_stat.json"
         if os.path.exists("data/processed/") is False:
             os.makedirs("data/processed/")
 
-        with open(map_file_stat, "w") as f:
+        with open(self.file_stat_pat, "w") as f:
             json.dump(self.map_file_stat, f, indent=4)
-
-        with open(index_path, "w") as f:
+        with open(self.index_path, "w") as f:
             json.dump(self.map_chunks, f, indent=4)
         return self.map_chunks
 

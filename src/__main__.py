@@ -72,6 +72,9 @@ class Cli:
         print(f"Ingestion complete! Indexed {len(chunks)} "
               f"chunks under {self.index_path}")
         print("embedding all the chunk in process ...")
+        if os.path.exists("data/processed/index.json"):
+            with open("data/processed/index.json", "r") as f:
+                self.embedding_model.chunks_index = json.load(f)
         self.embedding_model.load_or_create_embeddings()
         print("Done")
 
@@ -176,7 +179,7 @@ class Cli:
         retrieves: list[dict] = []
         list_UnansweredQuestion = []
         list_Minimal_search_result = []
-
+        print("Search dataset...")
         for data in tqdm(data_set):
             query = data["question"]
             id = data["question_id"]
@@ -391,7 +394,7 @@ class Cli:
                     "retrieved_sources": data["retrieved_sources"],
                     "answear": response
             })
-
+            break
         models.StudentSearchResultsAndAnswer(
             search_results=list_minimal_answer, k=k)
 
