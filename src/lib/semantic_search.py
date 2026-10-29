@@ -101,7 +101,7 @@ class Semantic_search:
 
         all_chunkstr = self.__strAll_docs()
         chunks_embeddings = []
-        print("chunking with tqdm")
+        print("embedding all the chunks ...")
         for chunk in tqdm.tqdm(all_chunkstr):
             chunks_embeddings.append(self.model.encode(chunk))
 

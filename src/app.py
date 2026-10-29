@@ -20,7 +20,8 @@ def index(m: int) -> dict:
 
     chunker = Chunker(m)
     chunker.chunker(m)
-    return {"message": "the data is indexed and saved in disk"}
+    return {"message": "the data is indexed and saved "
+            "under data/processed/index.json"}
 
 
 @app.get("/answer/queyr/{query}")

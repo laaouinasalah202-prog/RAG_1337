@@ -28,7 +28,7 @@ class Chunker:
         Args:
             max_chunk_size (int): Maximum size of a chunk in characters.
         """
-        save_path.mkdir(exist_ok=True)
+        save_path.mkdir(parents=True, exist_ok=True)
         self.file_stat_pat = save_path.joinpath("file_stat.json")
         self.index_path = save_path.joinpath("index.json")
         self.file_stat_pat = save_path.joinpath("file_stat.json")
@@ -108,14 +108,20 @@ class Chunker:
         all_files = [str(f) for f in files]
         modified_files = []
         deleted_files = []
+        old_files = []
 
         for file in self.map_file_stat[1:]:
+            old_files.append(file["file_path"])
             pth = Path(file["file_path"])
             if file["file_path"] not in all_files:
                 deleted_files.append(file["file_path"])
                 continue
             elif pth.stat().st_mtime != file["index_time"]:
                 modified_files.append(file["file_path"])
+
+        for i in all_files:
+            if i not in old_files:
+                modified_files.append(i)
 
         files_to_remove = modified_files + deleted_files
         if len(files_to_remove) == 0:
@@ -124,13 +130,13 @@ class Chunker:
 
         self.map_chunks = [chunk for chunk in self.map_chunks
                            if chunk["path"] not in files_to_remove]
-        self.map_file_stat = [stat for stat in self.map_file_stat
+        self.map_file_stat = [stat for stat in self.map_file_stat[1:]
                               if stat["file_path"] not in files_to_remove]
 
         if len(deleted_files) > 0:
             print(f"Deleted files: {deleted_files}")
         if len(modified_files) > 0:
-            print(f"Reindixing modified files:\n{modified_files}")
+            print(f"Reindixing new or modified files:\n{modified_files}")
             self.reindex_modified(modified_files)
         return
 
